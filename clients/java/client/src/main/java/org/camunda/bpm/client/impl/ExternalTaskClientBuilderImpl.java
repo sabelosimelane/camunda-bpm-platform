@@ -302,7 +302,7 @@ public class ExternalTaskClientBuilderImpl implements ExternalTaskClientBuilder 
   protected void initEngineClient() {
     RequestInterceptorHandler requestInterceptorHandler = new RequestInterceptorHandler(interceptors);
     httpClientBuilder.addRequestInterceptorLast(requestInterceptorHandler);
-    RequestExecutor requestExecutor = new RequestExecutor(httpClientBuilder.build(), objectMapper);
+    RequestExecutor requestExecutor = new RequestExecutor(httpClientBuilder.build(), objectMapper, httpClientBuilder);
 
     engineClient = new EngineClient(workerId, maxTasks, asyncResponseTimeout, baseUrl, requestExecutor,
         usePriority, orderingConfig);

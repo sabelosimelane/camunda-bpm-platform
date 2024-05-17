@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.net.URI;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.impl.classic.AbstractHttpClientResponseHandler;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
@@ -52,10 +53,12 @@ public class RequestExecutor {
 
   protected HttpClient httpClient;
   protected ObjectMapper objectMapper;
+  protected HttpClientBuilder httpClientBuilder;
 
-  protected RequestExecutor(HttpClient httpClient, ObjectMapper objectMapper) {
+  protected RequestExecutor(HttpClient httpClient, ObjectMapper objectMapper, HttpClientBuilder httpClientBuilder) {
     this.httpClient = httpClient;
     this.objectMapper = objectMapper;
+    this.httpClientBuilder = httpClientBuilder;
   }
 
   protected <T> T postRequest(String resourceUrl, RequestDto requestDto, Class<T> responseClass) {
@@ -86,8 +89,16 @@ public class RequestExecutor {
       throw LOG.exceptionWhileReceivingResponse(httpRequest, e);
 
     } catch (IOException e) { // connection was aborted
-      throw LOG.exceptionWhileEstablishingConnection(httpRequest, e);
-
+      if (e.getMessage().contains("Connection pool shut down")) {
+        httpClient = httpClientBuilder.build();
+        try {
+            return this.httpClient.execute(httpRequest, handleResponse(responseClass));
+        } catch (Exception ex) {
+            throw LOG.exceptionWhileEstablishingConnection(httpRequest, e);
+        }
+      } else {
+        throw LOG.exceptionWhileEstablishingConnection(httpRequest, e);
+      }
     }
   }
 
